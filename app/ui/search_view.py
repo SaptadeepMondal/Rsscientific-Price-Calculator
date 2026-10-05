@@ -28,6 +28,7 @@ class SearchView(ctk.CTkFrame):
             height=40
         )
         self.search_entry.grid(row=0, column=0, pady=(0, 16), sticky="ew")
+        self.search_entry.bind("<Return>", self.on_search_enter)
         
         # We need to simulate the focus ring glow. 
         # For simplicity, we bind FocusIn and FocusOut to change border_color to ACCENT, border_width to 2
@@ -40,7 +41,13 @@ class SearchView(ctk.CTkFrame):
         self.results_frame.grid_columnconfigure(0, weight=1)
         
         self.after_id = None
+        self.current_results = []
         
+    def on_search_enter(self, event):
+        # If they press Enter in the search box, pick the top result automatically
+        if self.current_results:
+            self.on_product_selected(self.current_results[0])
+            
     def on_search_changed(self, *args):
         if self.after_id:
             self.after_cancel(self.after_id)
@@ -53,9 +60,11 @@ class SearchView(ctk.CTkFrame):
             widget.destroy()
             
         if not query or len(query) < 2:
+            self.current_results = []
             return
             
         results = search_products(query)
+        self.current_results = results
         
         if not results:
             lbl = ctk.CTkLabel(self.results_frame, text=f"No products match '{query}'.", font=get_font("body"), text_color=INK_MUTED)
@@ -68,42 +77,29 @@ class SearchView(ctk.CTkFrame):
             row_frame.grid(row=i*2, column=0, sticky="ew")
             row_frame.grid_columnconfigure(0, weight=1)
             
-            # Hover effects
-            def on_enter(e, f=row_frame): f.configure(fg_color=PANEL_GLASS)
-            def on_leave(e, f=row_frame): f.configure(fg_color="transparent")
             def on_click(e, p=prod): self.on_product_selected(p)
-            
-            # Bind events to frame and its children so click/hover anywhere works
-            row_frame.bind("<Enter>", on_enter)
-            row_frame.bind("<Leave>", on_leave)
-            row_frame.bind("<Button-1>", on_click)
             
             # Inner layout for text
             info_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
             info_frame.grid(row=0, column=0, sticky="ew", padx=8, pady=12)
-            info_frame.grid_columnconfigure(1, weight=1)
+            info_frame.grid_columnconfigure(0, weight=1)
+            info_frame.grid_columnconfigure(1, weight=0, minsize=100)
             
-            info_frame.bind("<Enter>", on_enter)
-            info_frame.bind("<Leave>", on_leave)
             info_frame.bind("<Button-1>", on_click)
             
             # Left: Name and Size
             text_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
             text_frame.grid(row=0, column=0, sticky="w")
-            text_frame.bind("<Enter>", on_enter)
-            text_frame.bind("<Leave>", on_leave)
+            text_frame.grid_columnconfigure(0, weight=1)
             text_frame.bind("<Button-1>", on_click)
             
-            name_lbl = ctk.CTkLabel(text_frame, text=f"[{prod['code']}] {prod['name']}", font=get_font("body"), text_color=INK)
+            # Using wraplength so long names don't push the price out
+            name_lbl = ctk.CTkLabel(text_frame, text=f"[{prod['code']}] {prod['name']}", font=get_font("body"), text_color=INK, wraplength=400, justify="left")
             name_lbl.grid(row=0, column=0, sticky="w")
-            name_lbl.bind("<Enter>", on_enter)
-            name_lbl.bind("<Leave>", on_leave)
             name_lbl.bind("<Button-1>", on_click)
             
             size_lbl = ctk.CTkLabel(text_frame, text=prod['size'], font=get_font("metadata"), text_color=INK_MUTED)
             size_lbl.grid(row=1, column=0, sticky="w")
-            size_lbl.bind("<Enter>", on_enter)
-            size_lbl.bind("<Leave>", on_leave)
             size_lbl.bind("<Button-1>", on_click)
             
             # Right: Price
@@ -113,8 +109,6 @@ class SearchView(ctk.CTkFrame):
             
             price_lbl = ctk.CTkLabel(info_frame, text=price_text, font=price_font, text_color=price_color, anchor="e")
             price_lbl.grid(row=0, column=1, sticky="e")
-            price_lbl.bind("<Enter>", on_enter)
-            price_lbl.bind("<Leave>", on_leave)
             price_lbl.bind("<Button-1>", on_click)
             
             # Divider

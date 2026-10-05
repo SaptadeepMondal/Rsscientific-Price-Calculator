@@ -127,15 +127,17 @@ class ReceiptView(ctk.CTkFrame):
             frame = ctk.CTkFrame(self.receipt_frame, fg_color=CANVAS, corner_radius=RAD_BUTTON)
             frame.grid(row=i, column=0, sticky="ew", pady=4, padx=12)
             frame.grid_columnconfigure(0, weight=1)
+            frame.grid_columnconfigure(1, weight=0, minsize=80)
+            frame.grid_columnconfigure(2, weight=0, minsize=40)
             
             # Label
             text = f"[{prod['code']}] {prod['name']} × {item['quantity']}"
-            lbl = ctk.CTkLabel(frame, text=text, font=get_font("body"), text_color=INK, anchor="w", justify="left")
+            lbl = ctk.CTkLabel(frame, text=text, font=get_font("body"), text_color=INK, anchor="w", justify="left", wraplength=200)
             lbl.grid(row=0, column=0, padx=12, pady=12, sticky="w")
             
             # Price
             price_lbl = ctk.CTkLabel(frame, text=item['price_text'], font=item['price_font'], text_color=item['price_color'])
-            price_lbl.grid(row=0, column=1, padx=(12, 4), pady=12)
+            price_lbl.grid(row=0, column=1, padx=(12, 4), pady=12, sticky="e")
             
             # Delete button (×)
             del_btn = ctk.CTkButton(
@@ -147,7 +149,7 @@ class ReceiptView(ctk.CTkFrame):
             del_btn.bind("<Enter>", lambda e, b=del_btn: b.configure(text_color="white"))
             del_btn.bind("<Leave>", lambda e, b=del_btn: b.configure(text_color=INK_MUTED))
             
-            del_btn.grid(row=0, column=2, padx=(0, 8), pady=12)
+            del_btn.grid(row=0, column=2, padx=(0, 8), pady=12, sticky="e")
             
             if item['total_price'] is not None:
                 running_total += item['total_price']

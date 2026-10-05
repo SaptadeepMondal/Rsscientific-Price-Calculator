@@ -68,12 +68,18 @@ class App(ctk.CTk):
         self.search_view = SearchView(self.left_pane, on_product_selected=self.on_product_selected)
         self.search_view.grid(row=1, column=0, sticky="nsew", rowspan=2)
 
-        # Selected Product Panel (Elevated)
+        # Selected Product Panel Container (fixed height so window doesn't jump)
+        self.item_container = ctk.CTkFrame(self.left_pane, fg_color="transparent", height=130)
+        self.item_container.grid(row=3, column=0, sticky="ew", pady=(16, 0))
+        self.item_container.grid_propagate(False) # Prevents the container from shrinking/growing
+        self.item_container.grid_columnconfigure(0, weight=1)
+        self.item_container.grid_rowconfigure(0, weight=1)
+        
         self.selected_prod = None
         
-        # We place it at row 3
-        self.item_frame = ctk.CTkFrame(self.left_pane, fg_color=PANEL_GLASS, corner_radius=RAD_PANEL, border_width=1, border_color=PANEL_EDGE)
-        self.item_frame.grid(row=3, column=0, sticky="ew", pady=(16, 0))
+        # The elevated panel itself
+        self.item_frame = ctk.CTkFrame(self.item_container, fg_color=PANEL_GLASS, corner_radius=RAD_PANEL, border_width=1, border_color=PANEL_EDGE)
+        self.item_frame.grid(row=0, column=0, sticky="nsew")
         self.item_frame.grid_columnconfigure(1, weight=1)
         self.item_frame.grid_remove() # Hide initially
         
@@ -91,6 +97,9 @@ class App(ctk.CTk):
         )
         self.qty_entry.pack(side="left")
         self.qty_var.trace_add("write", self.update_item_price)
+        
+        # QOL: Pressing enter adds it to the list
+        self.qty_entry.bind("<Return>", lambda e: self.add_to_receipt())
         
         self.price_lbl = ctk.CTkLabel(self.item_frame, text="", font=get_font("numeral_large"), text_color=INK, anchor="e")
         self.price_lbl.grid(row=1, column=1, padx=16, pady=(0, 16), sticky="e")
@@ -114,6 +123,9 @@ class App(ctk.CTk):
         self.item_name_lbl.configure(text=f"{product['name']}")
         self.update_item_price()
         self.item_frame.grid() # Show the elevated panel
+        self.qty_entry.focus() # Auto-focus so they can just press Enter
+        # Select the text so if they type a new number it replaces the "1" instantly
+        self.qty_entry.select_range(0, "end")
         
     def update_item_price(self, *args):
         if not self.selected_prod:
@@ -141,6 +153,8 @@ class App(ctk.CTk):
             return
         try:
             qty = int(self.qty_var.get())
+            if qty <= 0:
+                return
         except ValueError:
             return
             
@@ -148,6 +162,7 @@ class App(ctk.CTk):
         self.selected_prod = None
         self.item_frame.grid_remove() # Hide again
         self.search_view.clear_search()
+        self.search_view.search_entry.focus() # Auto-focus back to search bar
 
     def open_manage_lists(self):
         ManageListsWindow(self).grab_set()
