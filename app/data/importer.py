@@ -27,12 +27,18 @@ def process_imported_data(df, mapping, filepath):
     records_to_insert = []
     
     for _, row in df.iterrows():
-        code = str(row[mapping["Code"]]) if mapping["Code"] and pd.notna(row[mapping["Code"]]) else ""
-        name = str(row[mapping["Name"]]) if mapping["Name"] and pd.notna(row[mapping["Name"]]) else ""
-        size = str(row[mapping["Size"]]) if mapping["Size"] and pd.notna(row[mapping["Size"]]) else ""
+        # Safely get column names from mapping
+        code_col = mapping.get("code")
+        name_col = mapping.get("name")
+        size_col = mapping.get("size")
+        price_col = mapping.get("unit_price")
+
+        code = str(row[code_col]) if code_col and pd.notna(row[code_col]) else ""
+        name = str(row[name_col]) if name_col and pd.notna(row[name_col]) else ""
+        size = str(row[size_col]) if size_col and pd.notna(row[size_col]) else ""
         
         # Unit price parsing
-        raw_price = row[mapping["Unit Price"]] if mapping["Unit Price"] and pd.notna(row[mapping["Unit Price"]]) else None
+        raw_price = row[price_col] if price_col and pd.notna(row[price_col]) else None
         
         try:
             unit_price = float(raw_price) if raw_price is not None else None
